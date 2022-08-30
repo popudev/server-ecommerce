@@ -7,6 +7,7 @@ const cartSchema = new mongoose.Schema(
     },
     userId: {
       type: mongoose.ObjectId,
+      unique: true,
     }
   },
   { timestamps: true },
