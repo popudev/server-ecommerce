@@ -29,17 +29,6 @@ const UserController = {
     }
   },
 
-  addProductCart: async (req, res) => {
-    try {
-      console.log(req.user);
-      const cart = await Cart.findOne({userId: req.user.id})
-      console.log(cart);
-      res.status(200).json('Add to cart successfully');
-
-    } catch(err) {
-
-    }
-  }
 };
 
 module.exports = UserController;
