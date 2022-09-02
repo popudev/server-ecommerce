@@ -13,7 +13,7 @@ const AuthenController = {
         admin: user.admin,
       },
       process.env.JWT_ACCESS_KEY,
-      { expiresIn: '60s' },
+      { expiresIn: '10s' },
     );
   },
 
@@ -43,13 +43,7 @@ const AuthenController = {
       const user = await newUser.save();
       const { _id, username } = user._doc;
 
-      const newCart = await new Cart({
-        userId: _id,
-      })
-      await newCart.save();
-
       res.status(200).json(username);
-
     } catch (err) {
       console.log(err);
       res.status(500).json(err);
@@ -60,10 +54,11 @@ const AuthenController = {
     try {
       const user = await User.findOne({ username: req.body.username });
 
-      if (!user) return res.status(404).json({
-        key: 'username',
-        mess: 'Username is not exist'
-      });
+      if (!user)
+        return res.status(404).json({
+          key: 'username',
+          mess: 'Username is not exist',
+        });
 
       const match = await bcrypt.compare(req.body.password, user.password);
 
@@ -75,10 +70,10 @@ const AuthenController = {
 
         res.cookie('refreshToken', refreshToken, {
           httpOnly: true,
-          secure: false,//public change true
+          secure: false, //public change true
           path: '/',
           sameSite: 'strict',
-          expires: new Date(Date.now() + 900000),
+          exprires: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365),
         });
 
         const { password, admin, ...others } = user._doc;
@@ -87,14 +82,11 @@ const AuthenController = {
           ...others,
           accessToken,
         });
-
       } else {
-
         res.status(404).json({
           key: 'password',
           mess: 'Incorrect password',
         });
-
       }
     } catch (err) {
       res.status(500).json(err);
@@ -120,6 +112,7 @@ const AuthenController = {
         secure: false,
         path: '/',
         sameSite: 'strict',
+        exprires: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365),
       });
 
       res.status(200).json({ accessToken: newAccessToken });

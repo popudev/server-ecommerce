@@ -1,63 +1,88 @@
 const Cart = require('../models/Cart');
+const mongoose = require('mongoose');
 
 const CartController = {
   getCart: async (req, res) => {
     try {
-      const cart = await Cart.findOne({ userId: req.user.id });
-      res.status(200).json(cart.products);
-    } catch (err) {
-      res.status(500).json(err);
-    }
-  },
-  addProduct: async (req, res) => {
-    try {
-      const cart = await Cart.findOne({ userId: req.user.id });
-      const product = req.body;
-
-      const existsProduct = cart.products.filter((e) => e.productId === product.productId);
-
-      if (existsProduct.length) {
-        cart.products.map((e) => {
-          if (e.productId === product.productId) {
-            e.quantity += product.quantity;
-          }
-          return e;
-        });
-      } else {
-        cart.products.push(product);
-      }
-
-      await Cart.updateOne(
-        { userId: req.user.id },
+      const cart = await Cart.aggregate([
         {
-          $set: {
-            products: cart.products,
+          $match: {
+            userId: mongoose.Types.ObjectId(req.user.id),
           },
         },
-      );
+        {
+          $lookup: {
+            from: 'products',
+            localField: 'productId',
+            foreignField: '_id',
+            as: 'product',
+          },
+        },
+        {
+          $unwind: {
+            path: '$product',
+          },
+        },
+        {
+          $sort: {
+            createdAt: -1,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            product: 1,
+            quantity: 1,
+          },
+        },
+      ]);
+
+      console.log('cart: ', cart);
+
+      res.status(200).json(cart);
+    } catch (err) {
+      res.status(500).json(err);
+      console.log('err: ', err);
+    }
+  },
+
+  addProduct: async (req, res) => {
+    try {
+      const product = {
+        ...req.body,
+        productId: mongoose.Types.ObjectId(req.body.productId),
+      };
+
+      const cart = await Cart.find({ userId: req.user.id });
+
+      const existsProduct = cart.filter((e) => e.productId.toString() === product.productId.toString());
+
+      if (existsProduct.length) {
+        const itemCart = existsProduct[0];
+        await Cart.updateOne(
+          { _id: itemCart._id },
+          {
+            quantity: itemCart.quantity + product.quantity,
+          },
+        );
+      } else {
+        const newItemCart = await new Cart({
+          userId: req.user.id,
+          ...product,
+        });
+        await newItemCart.save();
+      }
 
       res.status(200).json('Add to cart successfully');
     } catch (err) {
+      console.log(err);
       res.status(500).json(err);
     }
   },
 
   deleteProduct: async (req, res) => {
     try {
-      const cart = await Cart.findOne({ userId: req.user.id });
-      const productId = req.params.id;
-
-      const newProductsInCart = cart.products.filter((e) => e.productId != productId);
-
-      await Cart.updateOne(
-        { userId: req.user.id },
-        {
-          $set: {
-            products: newProductsInCart,
-          },
-        },
-      );
-
+      await Cart.deleteOne({ _id: req.params.id, userId: req.user.id });
       res.status(200).json('Delete to cart successfully');
     } catch (err) {
       res.status(500).json(err);
