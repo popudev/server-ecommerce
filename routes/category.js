@@ -9,6 +9,7 @@ const AuthenMiddleware = require('../middlewares/AuthenMiddleware');
 
 //Routes
 router.get('/', CategoryController.getCategories);
+router.post('/', CategoryController.addCategory);
 
 // router.delete('/:id', AuthenMiddleware.verifyToken, ProductController.deleteProduct);
 

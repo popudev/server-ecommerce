@@ -37,12 +37,9 @@ const CartController = {
         },
       ]);
 
-      console.log('cart: ', cart);
-
       res.status(200).json(cart);
     } catch (err) {
       res.status(500).json(err);
-      console.log('err: ', err);
     }
   },
 
