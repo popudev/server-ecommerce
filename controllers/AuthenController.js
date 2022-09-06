@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const Cart = require('../models/Cart');
+const RefreshToken = require('../models/RefreshToken');
 const User = require('../models/User');
 
 const refreshTokens = [];
@@ -13,7 +13,7 @@ const AuthenController = {
         admin: user.admin,
       },
       process.env.JWT_ACCESS_KEY,
-      { expiresIn: '10s' },
+      { expiresIn: '5s' },
     );
   },
 
@@ -24,7 +24,7 @@ const AuthenController = {
         admin: user.admin,
       },
       process.env.JWT_ACCESS_KEY,
-      { expiresIn: '365d' },
+      { expiresIn: '20s' },
     );
   },
 
@@ -66,7 +66,14 @@ const AuthenController = {
         const accessToken = AuthenController.genarateAccessToken(user);
         const refreshToken = AuthenController.genarateRefreshToken(user);
 
-        refreshTokens.push(refreshToken);
+        const userId = user._doc._id;
+
+        const newToken = await RefreshToken({
+          userId: userId,
+          refreshToken: refreshToken,
+        });
+
+        await newToken.save();
 
         res.cookie('refreshToken', refreshToken, {
           httpOnly: true,
@@ -76,10 +83,7 @@ const AuthenController = {
           exprires: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365),
         });
 
-        const { password, admin, ...others } = user._doc;
-
         res.status(200).json({
-          ...others,
           accessToken,
         });
       } else {
@@ -94,18 +98,29 @@ const AuthenController = {
   },
 
   requestRefreshToken: async (req, res) => {
-    if (!req.cookies.refreshToken) return res.status(401).json("You're not authenticated");
+    const refreshTokenRequest = req.cookies.refreshToken;
 
-    jwt.verify(req.cookies.refreshToken, process.env.JWT_ACCESS_KEY, (err, user) => {
+    if (!refreshTokenRequest) return res.status(401).json("You're not authenticated");
+
+    const match = await RefreshToken.findOne({ refreshToken: refreshTokenRequest });
+
+    if (!match) return res.status(401).json("You're not authenticated");
+
+    jwt.verify(refreshTokenRequest, process.env.JWT_ACCESS_KEY, async (err, user) => {
       if (err) {
-        return res.status(403).json('Token is not valid');
+        await RefreshToken.deleteOne({ refreshToken: refreshTokenRequest });
+        return res.status(403).json('Refresh token is not valid');
       }
 
       const newAccessToken = AuthenController.genarateAccessToken(user);
       const newRefreshToken = AuthenController.genarateRefreshToken(user);
 
-      refreshTokens.filter((token) => token !== req.cookies.refreshToken);
-      refreshTokens.push(newRefreshToken);
+      await RefreshToken.updateOne(
+        { refreshToken: refreshTokenRequest },
+        {
+          refreshToken: newRefreshToken,
+        },
+      );
 
       res.cookie('refreshToken', newRefreshToken, {
         httpOnly: true,
@@ -120,8 +135,8 @@ const AuthenController = {
   },
 
   logout: (req, res) => {
-    if (!req.cookies.refreshToken) return res.status(401).json("You're not authenticated");
-    refreshTokens.filter((token) => token !== req.cookies.refreshToken);
+    if (!refreshTokenRequest) return res.status(401).json("You're not authenticated");
+    refreshTokens.filter((token) => token !== refreshTokenRequest);
     res.cookie('refreshToken', '');
     res.status(200).json('Logout Successfully');
   },

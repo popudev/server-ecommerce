@@ -1,11 +1,24 @@
+const { default: mongoose } = require('mongoose');
 const Category = require('../models/Category');
 
 const CategoryController = {
   getCategories: async (req, res) => {
     try {
-      console.log(req.query);
       const categories = await Category.find();
+
       res.status(200).json(categories);
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  },
+
+  addCategory: async (req, res) => {
+    try {
+      const newCategory = await Category({
+        _id: mongoose.Types.ObjectId(req.body._id),
+        title: req.body.title,
+      });
+      await newCategory.save();
     } catch (err) {
       res.status(500).json(err);
     }

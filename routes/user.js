@@ -8,7 +8,6 @@ const UserController = require('../controllers/UserController');
 const AuthenMiddleware = require('../middlewares/AuthenMiddleware');
 
 //Routes
-router.get('/', AuthenMiddleware.verifyToken, UserController.getAllUsers);
-router.delete('/:id', AuthenMiddleware.verifyToken, AuthenMiddleware.isAdmin, UserController.deleteUser);
+router.get('/', AuthenMiddleware.verifyToken, UserController.getUser);
 
 module.exports = router;
