@@ -1,7 +1,16 @@
-const { default: mongoose } = require('mongoose');
+const mongoose = require('mongoose');
 const Product = require('../models/Product');
 
 const ProductController = {
+  getProduct: async (req, res) => {
+    try {
+      const product = await Product.findOne({ _id: req.params.id });
+      res.status(200).json(product);
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  },
+
   getProducts: async (req, res) => {
     try {
       const aggregatePipeline = [];
