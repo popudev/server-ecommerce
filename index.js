@@ -7,7 +7,7 @@ const route = require('./routes');
 
 dotenv.config();
 const app = express();
-
+const PORT = process.env.PORT || 8000;
 mongoose
   .connect(process.env.MONGODB_URL, {
     autoIndex: true, //make this also true
@@ -22,6 +22,6 @@ app.use(express.json());
 
 route(app);
 
-app.listen(8000, () => {
+app.listen(PORT, () => {
   console.log('Server is running');
 });
