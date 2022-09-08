@@ -13,7 +13,7 @@ const AuthenController = {
         admin: user.admin,
       },
       process.env.JWT_ACCESS_KEY,
-      { expiresIn: '5s' },
+      { expiresIn: '30s' },
     );
   },
 
@@ -24,7 +24,7 @@ const AuthenController = {
         admin: user.admin,
       },
       process.env.JWT_ACCESS_KEY,
-      { expiresIn: '20s' },
+      { expiresIn: '1d' },
     );
   },
 
@@ -134,11 +134,17 @@ const AuthenController = {
     });
   },
 
-  logout: (req, res) => {
-    if (!refreshTokenRequest) return res.status(401).json("You're not authenticated");
-    refreshTokens.filter((token) => token !== refreshTokenRequest);
-    res.cookie('refreshToken', '');
-    res.status(200).json('Logout Successfully');
+  logout: async (req, res) => {
+    try {
+      const refreshTokenRequest = req.cookies.refreshToken;
+      if (!refreshTokenRequest) return res.status(401).json("You're not authenticated");
+      await RefreshToken.deleteOne({ refreshToken: refreshTokenRequest });
+
+      res.cookie('refreshToken', '');
+      res.status(200).json('Logout Successfully');
+    } catch (err) {
+      res.status(500).json('Logout Failed');
+    }
   },
 };
 
