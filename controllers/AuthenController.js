@@ -80,6 +80,7 @@ const AuthenController = {
           secure: true, //public change true
           path: '/',
           sameSite: 'strict',
+          domain: process.env.CLIENT_URL,
           exprires: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365),
         });
 
@@ -127,6 +128,7 @@ const AuthenController = {
         secure: true,
         path: '/',
         sameSite: 'strict',
+        domain: process.env.CLIENT_URL,
         exprires: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365),
       });
 
