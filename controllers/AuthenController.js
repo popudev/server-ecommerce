@@ -77,7 +77,7 @@ const AuthenController = {
 
         res.cookie('refreshToken', refreshToken, {
           httpOnly: true,
-          secure: false, //public change true
+          secure: true, //public change true
           path: '/',
           sameSite: 'strict',
           exprires: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365),
@@ -124,7 +124,7 @@ const AuthenController = {
 
       res.cookie('refreshToken', newRefreshToken, {
         httpOnly: true,
-        secure: false,
+        secure: true,
         path: '/',
         sameSite: 'strict',
         exprires: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365),

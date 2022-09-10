@@ -89,18 +89,19 @@ const ProductController = {
 
   addProduct: async (req, res) => {
     try {
-      const newProduct = await new Product({
-        _id: mongoose.Types.ObjectId(req.body._id),
-        title: req.body.title,
-        firtWord: req.body.title[0],
-        price: req.body.price,
-        sale: req.body.sale,
-        description: req.body.description,
-        categoryId: mongoose.Types.ObjectId(req.body.categoryId),
-      });
+      console.log(req.body);
+      // const newProduct = await new Product({
+      //   _id: mongoose.Types.ObjectId(req.body._id),
+      //   title: req.body.title,
+      //   firtWord: req.body.title[0],
+      //   price: req.body.price,
+      //   sale: req.body.sale,
+      //   description: req.body.description,
+      //   categoryId: mongoose.Types.ObjectId(req.body.categoryId),
+      // });
 
-      const product = await newProduct.save();
-      res.status(200).json(product);
+      // const product = await newProduct.save();
+      // res.status(200).json(product);
     } catch (err) {
       res.status(500).json(err);
     }
