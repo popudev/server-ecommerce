@@ -80,7 +80,7 @@ const AuthenController = {
           secure: true, //public change true
           path: '/',
           sameSite: 'strict',
-          domain: 'https://631a1d0f9f6d120081f30ca4--keen-choux-41ea64.netlify.app',
+          domain: '*.netlify.app',
           exprires: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365),
         });
 
