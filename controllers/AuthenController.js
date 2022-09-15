@@ -13,7 +13,7 @@ const AuthenController = {
         admin: user.admin,
       },
       process.env.JWT_ACCESS_KEY,
-      { expiresIn: '30s' },
+      { expiresIn: '15s' },
     );
   },
 
@@ -24,7 +24,7 @@ const AuthenController = {
         admin: user.admin,
       },
       process.env.JWT_ACCESS_KEY,
-      { expiresIn: '1d' },
+      { expiresIn: '30s' },
     );
   },
 
@@ -41,7 +41,7 @@ const AuthenController = {
       });
 
       const user = await newUser.save();
-      const { _id, username } = user._doc;
+      const { username } = user._doc;
 
       res.status(200).json(username);
     } catch (err) {
@@ -80,12 +80,14 @@ const AuthenController = {
           secure: true, //public change true
           path: '/',
           sameSite: 'strict',
-          domain: '*.netlify.app',
-          exprires: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365),
+          exprires: new Date().getTime() + 1000 * 60 * 60 * 24 * 365,
         });
+
+        const { password, ...other } = user._doc;
 
         res.status(200).json({
           accessToken,
+          ...other,
         });
       } else {
         res.status(404).json({
@@ -128,8 +130,7 @@ const AuthenController = {
         secure: true,
         path: '/',
         sameSite: 'strict',
-        domain: process.env.CLIENT_URL,
-        exprires: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365),
+        exprires: new Date().getTime() + 1000 * 60 * 60 * 24 * 365,
       });
 
       res.status(200).json({ accessToken: newAccessToken });

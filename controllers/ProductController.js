@@ -4,8 +4,34 @@ const Product = require('../models/Product');
 const ProductController = {
   getProduct: async (req, res) => {
     try {
-      const product = await Product.findOne({ _id: req.params.id });
-      res.status(200).json(product);
+      console.log(req.params);
+      const product = await Product.aggregate([
+        {
+          $match: {
+            _id: mongoose.Types.ObjectId(req.params.id),
+          },
+        },
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'categoryId',
+            foreignField: '_id',
+            as: 'categoryTitle',
+          },
+        },
+        {
+          $unwind: {
+            path: '$categoryTitle',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $set: {
+            categoryTitle: '$categoryTitle.title',
+          },
+        },
+      ]);
+      res.status(200).json(product[0]);
     } catch (err) {
       res.status(500).json(err);
     }
