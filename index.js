@@ -17,7 +17,7 @@ mongoose
     console.log('Connected to mongoDB');
   });
 
-app.use(cors());
+app.use(cors({ origin: 'https://popushop.vercel.app', credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
 
