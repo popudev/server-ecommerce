@@ -79,9 +79,8 @@ const AuthenController = {
           httpOnly: true,
           secure: true, //public change true
           path: '/',
-          domain: 'https://popushop.vercel.app',
           sameSite: 'none',
-          exprires: new Date().getTime() + 1000 * 60 * 60 * 24 * 365,
+          maxAge: 60000 * 60 * 24 * 356,
         });
 
         const { password, ...other } = user._doc;
@@ -98,6 +97,7 @@ const AuthenController = {
       }
     } catch (err) {
       res.status(500).json(err);
+      console.log('err: ', err);
     }
   },
 
@@ -130,9 +130,8 @@ const AuthenController = {
         httpOnly: true,
         secure: true,
         path: '/',
-        domain: 'https://popushop.vercel.app',
         sameSite: 'none',
-        exprires: new Date().getTime() + 1000 * 60 * 60 * 24 * 365,
+        maxAge: 60000 * 60 * 24 * 356,
       });
 
       res.status(200).json({ accessToken: newAccessToken });
