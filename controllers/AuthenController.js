@@ -79,6 +79,7 @@ const AuthenController = {
           httpOnly: true,
           secure: true, //public change true
           path: '/',
+          domain: 'https://popushop.vercel.app',
           sameSite: 'none',
           exprires: new Date().getTime() + 1000 * 60 * 60 * 24 * 365,
         });
@@ -129,6 +130,7 @@ const AuthenController = {
         httpOnly: true,
         secure: true,
         path: '/',
+        domain: 'https://popushop.vercel.app',
         sameSite: 'none',
         exprires: new Date().getTime() + 1000 * 60 * 60 * 24 * 365,
       });
