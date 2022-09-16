@@ -3,9 +3,17 @@ const jwt = require('jsonwebtoken');
 const RefreshToken = require('../models/RefreshToken');
 const User = require('../models/User');
 
-const refreshTokens = [];
-
 const AuthenController = {
+  setCookie: (res, refreshToken) => {
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: true, //public change true
+      path: '/',
+      sameSite: 'none',
+      maxAge: 60000 * 60 * 24 * 365,
+    });
+  },
+
   genarateAccessToken: (user) => {
     return jwt.sign(
       {
@@ -13,7 +21,7 @@ const AuthenController = {
         admin: user.admin,
       },
       process.env.JWT_ACCESS_KEY,
-      { expiresIn: '5s' },
+      { expiresIn: '30s' },
     );
   },
 
@@ -24,7 +32,7 @@ const AuthenController = {
         admin: user.admin,
       },
       process.env.JWT_ACCESS_KEY,
-      { expiresIn: '60s' },
+      { expiresIn: '30d' },
     );
   },
 
@@ -75,15 +83,9 @@ const AuthenController = {
 
         await newToken.save();
 
-        res.cookie('refreshToken', refreshToken, {
-          httpOnly: true,
-          secure: true, //public change true
-          path: '/',
-          sameSite: 'none',
-          maxAge: 60000 * 60 * 24 * 356,
-        });
-
         const { password, ...other } = user._doc;
+
+        AuthenController.setCookie(res, refreshToken);
 
         res.status(200).json({
           accessToken,
@@ -126,13 +128,7 @@ const AuthenController = {
         },
       );
 
-      res.cookie('refreshToken', newRefreshToken, {
-        httpOnly: true,
-        secure: true,
-        path: '/',
-        sameSite: 'none',
-        maxAge: 60000 * 60 * 24 * 356,
-      });
+      AuthenController.setCookie(res, newRefreshToken);
 
       res.status(200).json({ accessToken: newAccessToken });
     });
@@ -144,7 +140,7 @@ const AuthenController = {
       if (!refreshTokenRequest) return res.status(401).json("You're not authenticated");
       await RefreshToken.deleteOne({ refreshToken: refreshTokenRequest });
 
-      res.cookie('refreshToken', '');
+      AuthenController.setCookie(res, '');
       res.status(200).json('Logout Successfully');
     } catch (err) {
       res.status(500).json('Logout Failed');
