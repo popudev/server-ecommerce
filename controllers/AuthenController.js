@@ -53,7 +53,6 @@ const AuthenController = {
 
       res.status(200).json(username);
     } catch (err) {
-      console.log(err);
       res.status(500).json(err);
     }
   },
@@ -99,7 +98,6 @@ const AuthenController = {
       }
     } catch (err) {
       res.status(500).json(err);
-      console.log('err: ', err);
     }
   },
 

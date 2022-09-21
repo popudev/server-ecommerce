@@ -4,7 +4,6 @@ const Product = require('../models/Product');
 const ProductController = {
   getProduct: async (req, res) => {
     try {
-      console.log(req.params);
       const product = await Product.aggregate([
         {
           $match: {
@@ -46,12 +45,18 @@ const ProductController = {
           $regex: req.query.title,
           $options: 'gi',
         },
-
-        sale: {
-          $gte: Number.parseFloat(req.query.saleGte),
-          $lte: Number.parseFloat(req.query.saleLte),
-        },
       };
+
+      if (req.query.saleGte) {
+        match.sale = {};
+        match.sale.$gte = Number.parseFloat(req.query.saleGte);
+      }
+
+      if (req.query.saleLte) {
+        match.sale.$lte = Number.parseFloat(req.query.saleLte);
+      }
+
+      console.log(match);
 
       if (req.query.listCategoryId) {
         match.$or = req.query.listCategoryId.split(',').map((e) => {
@@ -115,7 +120,6 @@ const ProductController = {
 
   addProduct: async (req, res) => {
     try {
-      console.log(req.body);
       // const newProduct = await new Product({
       //   _id: mongoose.Types.ObjectId(req.body._id),
       //   title: req.body.title,
@@ -125,7 +129,6 @@ const ProductController = {
       //   description: req.body.description,
       //   categoryId: mongoose.Types.ObjectId(req.body.categoryId),
       // });
-
       // const product = await newProduct.save();
       // res.status(200).json(product);
     } catch (err) {
