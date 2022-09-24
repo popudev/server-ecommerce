@@ -36,13 +36,24 @@ const ProductController = {
     }
   },
 
+  getProductsRamdom: async (req, res) => {
+    try {
+      const number = Number.parseInt(req.query.number) || 6;
+      const products = await Product.aggregate([{ $sample: { size: number } }]);
+      res.status(200).json(products);
+    } catch (err) {
+      console.log('err: ', err);
+      res.status(500).json(err);
+    }
+  },
+
   getProducts: async (req, res) => {
     try {
       const aggregatePipeline = [];
 
       const match = {
         title: {
-          $regex: req.query.title,
+          $regex: req.query.title || '',
           $options: 'gi',
         },
       };
@@ -55,8 +66,6 @@ const ProductController = {
       if (req.query.saleLte) {
         match.sale.$lte = Number.parseFloat(req.query.saleLte);
       }
-
-      console.log(match);
 
       if (req.query.listCategoryId) {
         match.$or = req.query.listCategoryId.split(',').map((e) => {
@@ -120,19 +129,23 @@ const ProductController = {
 
   addProduct: async (req, res) => {
     try {
-      // const newProduct = await new Product({
-      //   _id: mongoose.Types.ObjectId(req.body._id),
-      //   title: req.body.title,
-      //   firtWord: req.body.title[0],
-      //   price: req.body.price,
-      //   sale: req.body.sale,
-      //   description: req.body.description,
-      //   categoryId: mongoose.Types.ObjectId(req.body.categoryId),
-      // });
-      // const product = await newProduct.save();
-      // res.status(200).json(product);
+      console.log('req: ', req.body);
+      const newProduct = await new Product({
+        _id: mongoose.Types.ObjectId(req.body._id),
+        title: req.body.title,
+        firtWord: req.body.title[0],
+        price: req.body.price,
+        sale: req.body.sale,
+        description: req.body.description,
+        categoryId: mongoose.Types.ObjectId(req.body.categoryId),
+        createdAt: new Date(req.body.createdAt),
+        updatedAt: new Date(req.body.createdAt),
+      });
+      const product = await newProduct.save();
+      res.status(200).json(product);
     } catch (err) {
       res.status(500).json(err);
+      console.log('err: ', err);
     }
   },
 };

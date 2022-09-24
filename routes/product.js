@@ -9,6 +9,7 @@ const AuthenMiddleware = require('../middlewares/AuthenMiddleware');
 
 //Routes
 router.get('/', ProductController.getProducts);
+router.get('/random', ProductController.getProductsRamdom);
 router.get('/:id', ProductController.getProduct);
 router.post('/', ProductController.addProduct);
 // router.delete('/:id', AuthenMiddleware.verifyToken, ProductController.deleteProduct);
