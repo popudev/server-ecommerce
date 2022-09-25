@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const RefreshToken = require('../models/RefreshToken');
 const User = require('../models/User');
+const passport = require('passport');
 
 const AuthenController = {
   setCookie: (res, refreshToken) => {
@@ -99,6 +100,17 @@ const AuthenController = {
     } catch (err) {
       res.status(500).json(err);
     }
+  },
+
+  loginGithub: async (req, res) => {
+    // router.get('/github', passport.authenticate('github', { scope: ['profile'] }));
+    // router.get(
+    //   '/github/callback',
+    //   passport.authenticate('github', {
+    //     successRedirect: CLIENT_URL,
+    //     failureRedirect: '/login/failed',
+    //   }),
+    // );
   },
 
   requestRefreshToken: async (req, res) => {
