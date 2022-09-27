@@ -1,32 +1,25 @@
 const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema(
+const userGoogleSchema = new mongoose.Schema(
   {
+    googleId: {
+      type: String,
+      required: true,
+    },
     fullname: {
       type: String,
-      required: true,
-      min: 6,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
+      default: '',
     },
     username: {
       type: String,
       required: true,
-      minlength: 6,
-      maxlength: 20,
-      unique: true,
     },
-    password: {
+    email: {
       type: String,
-      required: true,
-      minlength: 6,
+      default: '',
     },
     avatar: {
       type: String,
-      default: '',
     },
     admin: {
       type: Boolean,
@@ -38,10 +31,10 @@ const userSchema = new mongoose.Schema(
     },
     provider: {
       type: String,
-      default: 'local',
+      default: 'google',
     },
   },
   { timestamps: true },
 );
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('UserGoogle', userGoogleSchema);

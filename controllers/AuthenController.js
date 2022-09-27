@@ -3,12 +3,20 @@ const jwt = require('jsonwebtoken');
 const RefreshToken = require('../models/RefreshToken');
 const User = require('../models/User');
 const passport = require('passport');
+const UserGithub = require('../models/UserGithub');
+const UserGoogle = require('../models/UserGoogle');
+const UserFacebook = require('../models/UserFacebook');
+
+const dev = process.env.NODE_ENV !== 'production';
 
 const AuthenController = {
   setCookie: (res, refreshToken) => {
     res.cookie('refreshToken', refreshToken, {
+      // Since localhost is not having https protocol,
+      // secure cookies do not work correctly (in postman)
+      //SameSite is set to "None" since client and server will be in different domains.
       httpOnly: true,
-      secure: true, //public change true
+      secure: true,
       path: '/',
       sameSite: 'none',
       maxAge: 60000 * 60 * 24 * 365,
@@ -18,8 +26,9 @@ const AuthenController = {
   genarateAccessToken: (user) => {
     return jwt.sign(
       {
-        id: user.id,
+        id: user.id, // id is String
         admin: user.admin,
+        provider: user.provider,
       },
       process.env.JWT_ACCESS_KEY,
       { expiresIn: '30s' },
@@ -31,6 +40,7 @@ const AuthenController = {
       {
         id: user.id,
         admin: user.admin,
+        provider: user.provider,
       },
       process.env.JWT_ACCESS_KEY,
       { expiresIn: '30d' },
@@ -42,7 +52,7 @@ const AuthenController = {
       const salt = await bcrypt.genSalt(10);
       const hashed = await bcrypt.hash(req.body.password, salt);
 
-      const newUser = await new User({
+      const newUser = new User({
         fullname: req.body.fullname,
         email: req.body.email,
         username: req.body.username,
@@ -71,21 +81,8 @@ const AuthenController = {
       const match = await bcrypt.compare(req.body.password, user.password);
 
       if (match) {
-        const accessToken = AuthenController.genarateAccessToken(user);
-        const refreshToken = AuthenController.genarateRefreshToken(user);
-
-        const userId = user._doc._id;
-
-        const newToken = await RefreshToken({
-          userId: userId,
-          refreshToken: refreshToken,
-        });
-
-        await newToken.save();
-
+        const accessToken = await AuthenController.loginSuccess(res, user);
         const { password, ...other } = user._doc;
-
-        AuthenController.setCookie(res, refreshToken);
 
         res.status(200).json({
           accessToken,
@@ -102,15 +99,112 @@ const AuthenController = {
     }
   },
 
-  loginGithub: async (req, res) => {
-    // router.get('/github', passport.authenticate('github', { scope: ['profile'] }));
-    // router.get(
-    //   '/github/callback',
-    //   passport.authenticate('github', {
-    //     successRedirect: CLIENT_URL,
-    //     failureRedirect: '/login/failed',
-    //   }),
-    // );
+  loginSuccess: async (res, user) => {
+    const accessToken = AuthenController.genarateAccessToken(user);
+    const refreshToken = AuthenController.genarateRefreshToken(user);
+
+    const newToken = new RefreshToken({
+      userId: user.id,
+      refreshToken: refreshToken,
+    });
+
+    await newToken.save();
+    AuthenController.setCookie(res, refreshToken);
+
+    return accessToken;
+  },
+
+  loginGithub: async (profile, done) => {
+    try {
+      let userGithub = await UserGithub.findOne({ githubId: profile.id });
+
+      if (!userGithub) {
+        const newUserGithub = new UserGithub({
+          username: profile.username,
+          avatar: profile.photos && profile.photos[0].value,
+          githubId: profile.id,
+        });
+
+        userGithub = await newUserGithub.save();
+      }
+
+      const userCurrent = {
+        ...userGithub._doc,
+        id: userGithub.id,
+      };
+
+      done(null, userCurrent);
+    } catch (err) {
+      done(err, false);
+    }
+  },
+
+  loginGoogle: async (profile, done) => {
+    try {
+      let userGoogle = await UserGoogle.findOne({ googleId: profile.id });
+
+      if (!userGoogle) {
+        const newUserGoogle = new UserGoogle({
+          username: profile.displayName,
+          fullname: profile.displayName,
+          avatar: profile.photos && profile.photos[0].value,
+          googleId: profile.id,
+        });
+
+        userGoogle = await newUserGoogle.save();
+      }
+
+      const userCurrent = {
+        ...userGoogle._doc,
+        id: userGoogle.id,
+      };
+
+      done(null, userCurrent);
+    } catch (err) {
+      done(err, false);
+    }
+  },
+
+  loginFacebook: async (profile, done) => {
+    try {
+      let userFacebook = await UserFacebook.findOne({ FacebookId: profile.id });
+
+      if (!userFacebook) {
+        const newUserFacebook = new UserFacebook({
+          username: profile.displayName,
+          fullname: profile.displayName,
+          avatar: profile.photos && profile.photos[0].value,
+          facebookId: profile.id,
+        });
+
+        userFacebook = await newUserFacebook.save();
+      }
+
+      const userCurrent = {
+        ...userFacebook._doc,
+        id: userFacebook.id,
+      };
+
+      done(null, userCurrent);
+    } catch (err) {
+      done(err, false);
+    }
+  },
+
+  loginThirdPartySuccess: async (req, res) => {
+    try {
+      if (req.isAuthenticated()) {
+        const accessToken = await AuthenController.loginSuccess(res, req.user);
+        res.status(200).json({
+          ...req.user,
+          accessToken,
+        });
+      } else {
+        res.status(401).json("You're not authenticated");
+      }
+    } catch (err) {
+      res.status(500).json(err);
+    }
   },
 
   requestRefreshToken: async (req, res) => {
@@ -129,6 +223,7 @@ const AuthenController = {
       }
 
       const newAccessToken = AuthenController.genarateAccessToken(user);
+      console.log('user: ', user);
       const newRefreshToken = AuthenController.genarateRefreshToken(user);
 
       await RefreshToken.updateOne(
@@ -146,11 +241,24 @@ const AuthenController = {
 
   logout: async (req, res) => {
     try {
+      if (req.isAuthenticated()) {
+        return req.logOut(async () => {
+          const refreshTokenRequest = req.cookies.refreshToken;
+          if (!refreshTokenRequest) return res.status(401).json("You're not authenticated");
+          await RefreshToken.deleteOne({ refreshToken: refreshTokenRequest });
+
+          AuthenController.setCookie(res, '');
+
+          res.status(200).json('Logout Successfully');
+        });
+      }
+
       const refreshTokenRequest = req.cookies.refreshToken;
       if (!refreshTokenRequest) return res.status(401).json("You're not authenticated");
       await RefreshToken.deleteOne({ refreshToken: refreshTokenRequest });
 
       AuthenController.setCookie(res, '');
+
       res.status(200).json('Logout Successfully');
     } catch (err) {
       res.status(500).json('Logout Failed');

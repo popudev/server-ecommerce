@@ -45,6 +45,8 @@ const CartController = {
 
   addProduct: async (req, res) => {
     try {
+      console.log(req.user.id);
+
       const product = {
         ...req.body,
         productId: mongoose.Types.ObjectId(req.body.productId),
@@ -57,13 +59,13 @@ const CartController = {
       if (existsProduct.length) {
         const itemCart = existsProduct[0];
         await Cart.updateOne(
-          { _id: itemCart._id },
+          { _id: itemCart.id },
           {
             quantity: itemCart.quantity + product.quantity,
           },
         );
       } else {
-        const newItemCart = await new Cart({
+        const newItemCart = new Cart({
           userId: req.user.id,
           ...product,
         });

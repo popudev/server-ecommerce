@@ -1,14 +1,32 @@
 const User = require('../models/User');
+const UserFacebook = require('../models/UserFacebook');
+const UserGithub = require('../models/UserGithub');
+const UserGoogle = require('../models/UserGoogle');
 
 const UserController = {
   getUser: async (req, res) => {
     try {
-      const user = await User.findOne({ _id: req.user.id });
+      let user = {};
+
+      switch (req.user.provider) {
+        case 'github':
+          user = await UserGithub.findOne({ _id: req.user.id });
+          break;
+        case 'google':
+          user = await UserGoogle.findOne({ _id: req.user.id });
+          break;
+        case 'facebook':
+          user = await UserFacebook.findOne({ _id: req.user.id });
+          break;
+        default:
+          user = await User.findOne({ _id: req.user.id });
+      }
+
       const { password, ...other } = user._doc;
       res.status(200).json(other);
     } catch (err) {
-
       res.status(500).json(err);
+      console.log('err: ', err);
     }
   },
 

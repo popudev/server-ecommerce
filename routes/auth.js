@@ -11,13 +11,33 @@ router.post('/login', AuthenController.login);
 router.get('/refreshToken', AuthenController.requestRefreshToken);
 router.get('/logout', AuthenController.logout);
 
+router.get('/login/success', AuthenController.loginThirdPartySuccess);
+
 router.get('/github', passport.authenticate('github', { scope: ['profile'] }));
+router.get('/google', passport.authenticate('google', { scope: ['profile'] }));
+router.get('/facebook', passport.authenticate('facebook', { scope: ['profile'] }));
 
 router.get(
   '/github/callback',
   passport.authenticate('github', {
-    successRedirect: 'http://localhost:3000',
-    failureRedirect: '/login/failed',
+    successRedirect: process.env.CLIENT_URL + '/login',
+    failureRedirect: process.env.CLIENT_URL + '/login',
+  }),
+);
+
+router.get(
+  '/google/callback',
+  passport.authenticate('google', {
+    successRedirect: process.env.CLIENT_URL + '/login',
+    failureRedirect: process.env.CLIENT_URL + '/login',
+  }),
+);
+
+router.get(
+  '/facebook/callback',
+  passport.authenticate('google', {
+    successRedirect: process.env.CLIENT_URL + '/login',
+    failureRedirect: process.env.CLIENT_URL + '/login',
   }),
 );
 

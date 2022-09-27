@@ -6,34 +6,41 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const passport = require('passport');
 const route = require('./routes');
+const passportConfig = require('./services/passportConfig');
+
 dotenv.config();
 
-const passportSetup = require('./services/passport');
 const app = express();
 const PORT = process.env.PORT || 8000;
 
 mongoose
   .connect(process.env.MONGODB_URL, {
-    autoIndex: true, //make this also true
+    autoIndex: true,
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
   })
   .then(() => {
     console.log('Connected to mongoDB');
   });
+
+app.use(express.json());
+app.use(cors({ origin: true, credentials: true }));
 
 app.use(
   session({
     secret: 'somethingsecretgoeshere',
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: true },
+    // cookie: { secure: true },
   }),
 );
-app.use(cors({ origin: true, credentials: true }));
+
 app.use(cookieParser());
-app.use(express.json());
+
 app.use(passport.initialize());
 app.use(passport.session());
 
+passportConfig(passport);
 route(app);
 
 app.listen(PORT, () => {
