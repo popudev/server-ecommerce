@@ -31,7 +31,9 @@ app.use(
     secret: 'somethingsecretgoeshere',
     resave: false,
     saveUninitialized: true,
-    // cookie: { secure: true },
+    cookie: { 
+sameSite: 'none',
+secure: true },
   }),
 );
 
