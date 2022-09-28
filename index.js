@@ -26,6 +26,8 @@ mongoose
 app.use(express.json());
 app.use(cors({ origin: true, credentials: true }));
 
+app.set('trust proxy',1);
+
 app.use(
   session({
     secret: 'somethingsecretgoeshere',
