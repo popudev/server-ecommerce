@@ -26,16 +26,17 @@ mongoose
 app.use(express.json());
 app.use(cors({ origin: true, credentials: true }));
 
-app.set('trust proxy',1);
+app.set('trust proxy', 1);
 
 app.use(
   session({
     secret: 'somethingsecretgoeshere',
     resave: true,
     saveUninitialized: true,
-    cookie: { 
-sameSite: 'none',
-secure: true },
+    cookie: {
+      sameSite: 'none',
+      secure: true,
+    },
   }),
 );
 
