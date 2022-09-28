@@ -29,7 +29,7 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(
   session({
     secret: 'somethingsecretgoeshere',
-    resave: false,
+    resave: true,
     saveUninitialized: true,
     cookie: { 
 sameSite: 'none',
