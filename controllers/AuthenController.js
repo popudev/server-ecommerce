@@ -72,6 +72,8 @@ const AuthenController = {
     const accessToken = AuthenController.genarateAccessToken(user);
     const refreshToken = AuthenController.genarateRefreshToken(user);
 
+    console.log(req.headers['x-forwarded-for'] || req.connection.remoteAddress);
+
     const agent = useragent.parse(req.headers['user-agent']);
 
     const newToken = new RefreshToken({
