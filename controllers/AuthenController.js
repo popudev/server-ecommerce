@@ -74,15 +74,13 @@ const AuthenController = {
     const refreshToken = AuthenController.genarateRefreshToken(user);
 
     console.log(req.headers['x-forwarded-for'] || req.connection.remoteAddress);
-    const clinetIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     const client = new WebServiceClient(process.env.GEOIP2_ACCOUNT_ID, process.env.GEOIP2_LICENSE_KEY,{host: 'geolite.info'});
 
-    client.country(clinetIp).then((response) => {
-      console.log('response: ', response);
-      console.log(response.country.isoCode); // 'CA'
-      console.log(response.postal.code); // 'M5S'
-      console.log(response.traits.userType); // 'school'
-    }).catch(err=>console.log(err));
+    const countryRes = await client.country(clientIp);
+    const cityRes = await client.city(clientIp);
+    console.log(countryRes);
+    console.log(cityRes);
 
     const agent = useragent.parse(req.headers['user-agent']);
 
