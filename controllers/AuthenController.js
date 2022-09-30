@@ -184,7 +184,7 @@ const AuthenController = {
 
   githubCallback: (req, res) => {
     console.log(req.query);
-    res.redirect('http://localhost:3000?code=' + req.query.code);
+    res.redirect(process.env.CLIENT_URL + '?code=' + req.query.code);
   },
 };
 
