@@ -77,12 +77,12 @@ const AuthenController = {
     const clinetIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     const client = new WebServiceClient(process.env.GEOIP2_ACCOUNT_ID, process.env.GEOIP2_LICENSE_KEY,{host: 'geolite.info'});
 
-    client.insights(clinetIp).then((response) => {
+    client.country(clinetIp).then((response) => {
       console.log('response: ', response);
       console.log(response.country.isoCode); // 'CA'
       console.log(response.postal.code); // 'M5S'
       console.log(response.traits.userType); // 'school'
-    });
+    }).catch(err=>console.log(err));
 
     const agent = useragent.parse(req.headers['user-agent']);
 
