@@ -7,6 +7,7 @@ const UserGoogle = require('../models/UserGoogle');
 const queryString = require('query-string');
 const UserGithub = require('../models/UserGithub');
 const UserFacebook = require('../models/UserFacebook');
+const useragent = require('useragent');
 
 const AuthenController = {
   setCookie: (res, refreshToken) => {
@@ -67,7 +68,27 @@ const AuthenController = {
     }
   },
 
-  login: async (req, res) => {
+  loginSuccess: async (req, res, user) => {
+    const accessToken = AuthenController.genarateAccessToken(user);
+    const refreshToken = AuthenController.genarateRefreshToken(user);
+
+    const agent = useragent.parse(req.headers['user-agent']);
+
+    const newToken = new RefreshToken({
+      userId: user._id,
+      refreshToken: refreshToken,
+      agent: agent.toAgent(),
+      os: agent.os.toString(),
+      device: agent.device.toString(),
+    });
+
+    await newToken.save();
+    AuthenController.setCookie(res, refreshToken);
+
+    return accessToken;
+  },
+
+  loginLocal: async (req, res) => {
     try {
       const user = await User.findOne({ username: req.body.username });
 
@@ -80,7 +101,7 @@ const AuthenController = {
       const match = await bcrypt.compare(req.body.password, user.password);
 
       if (match) {
-        const accessToken = await AuthenController.loginSuccess(res, user);
+        const accessToken = await AuthenController.loginSuccess(req, res, user);
         const { password, ...other } = user._doc;
 
         res.status(200).json({
@@ -98,21 +119,6 @@ const AuthenController = {
     }
   },
 
-  loginSuccess: async (res, user) => {
-    const accessToken = AuthenController.genarateAccessToken(user);
-    const refreshToken = AuthenController.genarateRefreshToken(user);
-
-    const newToken = new RefreshToken({
-      userId: user._id,
-      refreshToken: refreshToken,
-    });
-
-    await newToken.save();
-    AuthenController.setCookie(res, refreshToken);
-
-    return accessToken;
-  },
-
   loginGoogle: async (req, res) => {
     try {
       let userGoogle = await UserGoogle.findOne({ googleId: req.body.googleId });
@@ -128,7 +134,7 @@ const AuthenController = {
         userGoogle = await newUserGoogle.save();
       }
 
-      const accessToken = await AuthenController.loginSuccess(res, userGoogle);
+      const accessToken = await AuthenController.loginSuccess(req, res, userGoogle);
 
       res.status(200).json({
         ...userGoogle._doc,
@@ -155,7 +161,7 @@ const AuthenController = {
         userGithub = await newUserGoogle.save();
       }
 
-      const accessToken = await AuthenController.loginSuccess(res, userGithub);
+      const accessToken = await AuthenController.loginSuccess(req, res, userGithub);
 
       res.status(200).json({
         ...userGithub._doc,
@@ -181,7 +187,7 @@ const AuthenController = {
         userFacebook = await newUserGoogle.save();
       }
 
-      const accessToken = await AuthenController.loginSuccess(res, userFacebook);
+      const accessToken = await AuthenController.loginSuccess(req, res, userFacebook);
 
       res.status(200).json({
         ...userFacebook._doc,
@@ -208,7 +214,6 @@ const AuthenController = {
       }
 
       const newAccessToken = AuthenController.genarateAccessToken(user);
-      console.log('user: ', user);
       const newRefreshToken = AuthenController.genarateRefreshToken(user);
 
       await RefreshToken.updateOne(

@@ -6,7 +6,7 @@ const AuthenController = require('../controllers/AuthenController');
 
 //Routes
 router.post('/register', AuthenController.register);
-router.post('/login', AuthenController.login);
+router.post('/login', AuthenController.loginLocal);
 router.post('/login/google', AuthenController.loginGoogle);
 router.post('/login/github', AuthenController.loginGithub);
 router.post('/login/facebook', AuthenController.loginFacebook);
