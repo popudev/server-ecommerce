@@ -70,6 +70,7 @@ const AuthenController = {
   },
 
   loginSuccess: async (req, res, user) => {
+    try {
     const accessToken = AuthenController.genarateAccessToken(user);
     const refreshToken = AuthenController.genarateRefreshToken(user);
 
@@ -77,10 +78,7 @@ const AuthenController = {
     const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     const client = new WebServiceClient(process.env.GEOIP2_ACCOUNT_ID, process.env.GEOIP2_LICENSE_KEY,{host: 'geolite.info'});
 
-    const countryRes = await client.country(clientIp);
     const cityRes = await client.city(clientIp);
-    console.log(countryRes);
-    console.log(cityRes);
 
     const agent = useragent.parse(req.headers['user-agent']);
 
@@ -90,12 +88,13 @@ const AuthenController = {
       agent: agent.toAgent(),
       os: agent.os.toString(),
       device: agent.device.toString(),
+      location: cityRes.city.names.en + ", " + cityRes.country.names.en,
     });
 
     await newToken.save();
     AuthenController.setCookie(res, refreshToken);
 
-    return accessToken;
+    return accessToken;} catch(err) {console.log(err)}
   },
 
   loginLocal: async (req, res) => {
