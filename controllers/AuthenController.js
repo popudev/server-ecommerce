@@ -1,8 +1,12 @@
 const bcrypt = require('bcrypt');
+const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const RefreshToken = require('../models/RefreshToken');
 const User = require('../models/User');
 const UserGoogle = require('../models/UserGoogle');
+const queryString = require('query-string');
+const UserGithub = require('../models/UserGithub');
+const UserFacebook = require('../models/UserFacebook');
 
 const AuthenController = {
   setCookie: (res, refreshToken) => {
@@ -135,6 +139,60 @@ const AuthenController = {
     }
   },
 
+  loginGithub: async (req, res) => {
+    try {
+      let userGithub = await UserGithub.findOne({ githubId: req.body.githubId });
+
+      if (!userGithub) {
+        const newUserGoogle = new UserGithub({
+          fullname: req.body.fullname,
+          username: req.body.username,
+          avatar: req.body.avatar,
+          githubId: req.body.githubId,
+          email: req.body.email,
+        });
+
+        userGithub = await newUserGoogle.save();
+      }
+
+      const accessToken = await AuthenController.loginSuccess(res, userGithub);
+
+      res.status(200).json({
+        ...userGithub._doc,
+        accessToken,
+      });
+    } catch (err) {
+      res.status(500).json(err.toString());
+    }
+  },
+
+  loginFacebook: async (req, res) => {
+    try {
+      let userFacebook = await UserFacebook.findOne({ facebookId: req.body.facebookId });
+
+      if (!userFacebook) {
+        const newUserGoogle = new UserFacebook({
+          fullname: req.body.fullname,
+          username: req.body.username,
+          avatar: req.body.avatar,
+          facebookId: req.body.facebookId,
+          email: req.body.email,
+        });
+
+        userFacebook = await newUserGoogle.save();
+      }
+
+      const accessToken = await AuthenController.loginSuccess(res, userFacebook);
+
+      res.status(200).json({
+        ...userFacebook._doc,
+        accessToken,
+      });
+    } catch (err) {
+      res.status(500).json(err.toString());
+    }
+  },
+
   requestRefreshToken: async (req, res) => {
     const refreshTokenRequest = req.cookies.refreshToken;
 
@@ -182,9 +240,49 @@ const AuthenController = {
     }
   },
 
-  githubCallback: (req, res) => {
-    console.log(req.query);
-    res.redirect(process.env.CLIENT_URL + '?code=' + req.query.code);
+  githubCallback: async (req, res) => {
+    try {
+      const code = req.query.code;
+      const payload = {
+        code,
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+      };
+
+      const accessTokenRes = await axios.post(
+        'https://github.com/login/oauth/access_token?' + queryString.stringify(payload),
+        {},
+        {
+          headers: {
+            accept: 'application/json',
+          },
+        },
+      );
+
+      const { access_token } = accessTokenRes.data;
+      const userGithubRes = await axios.get('https://api.github.com/user', {
+        headers: {
+          accept: 'application/json',
+          Authorization: 'Bearer ' + access_token,
+        },
+      });
+
+      const userGithub = userGithubRes.data;
+
+      const user = {
+        username: userGithub.login,
+        githubId: userGithub.id,
+        // avatar: userGithub.avatar_url,
+        email: userGithub.email || '',
+      };
+
+      res.redirect(
+        process.env.CLIENT_URL + '/load?avatar=' + userGithub.avatar_url + '&' + queryString.stringify(user),
+      );
+    } catch (err) {
+      console.log(err);
+      res.send(err);
+    }
   },
 };
 

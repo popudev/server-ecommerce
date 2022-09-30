@@ -12,7 +12,7 @@ const userFacebookSchema = new mongoose.Schema(
     },
     username: {
       type: String,
-      required: true,
+      default: '',
     },
     email: {
       type: String,
