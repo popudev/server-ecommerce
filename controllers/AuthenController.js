@@ -173,7 +173,6 @@ const AuthenController = {
       if (!userFacebook) {
         const newUserGoogle = new UserFacebook({
           fullname: req.body.fullname,
-          username: req.body.username,
           avatar: req.body.avatar,
           facebookId: req.body.facebookId,
           email: req.body.email,
