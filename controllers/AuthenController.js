@@ -8,6 +8,7 @@ const queryString = require('query-string');
 const UserGithub = require('../models/UserGithub');
 const UserFacebook = require('../models/UserFacebook');
 const useragent = require('useragent');
+const WebServiceClient = require('@maxmind/geoip2-node').WebServiceClient;
 
 const AuthenController = {
   setCookie: (res, refreshToken) => {
@@ -73,6 +74,17 @@ const AuthenController = {
     const refreshToken = AuthenController.genarateRefreshToken(user);
 
     console.log(req.headers['x-forwarded-for'] || req.connection.remoteAddress);
+    const clinetIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const client = new WebServiceClient(process.env.GEOIP2_ACCOUNT_ID, process.env.GEOIP2_LICENSE_KEY, {
+      host: 'geolite.info',
+    });
+
+    client.insights(clinetIp).then((response) => {
+      console.log('response: ', response);
+      console.log(response.country.isoCode); // 'CA'
+      console.log(response.postal.code); // 'M5S'
+      console.log(response.traits.userType); // 'school'
+    });
 
     const agent = useragent.parse(req.headers['user-agent']);
 
