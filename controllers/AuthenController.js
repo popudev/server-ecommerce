@@ -71,30 +71,37 @@ const AuthenController = {
 
   loginSuccess: async (req, res, user) => {
     try {
-    const accessToken = AuthenController.genarateAccessToken(user);
-    const refreshToken = AuthenController.genarateRefreshToken(user);
+      const accessToken = AuthenController.genarateAccessToken(user);
+      const refreshToken = AuthenController.genarateRefreshToken(user);
 
-    console.log(req.headers['x-forwarded-for'] || req.connection.remoteAddress);
-    const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    const client = new WebServiceClient(process.env.GEOIP2_ACCOUNT_ID, process.env.GEOIP2_LICENSE_KEY,{host: 'geolite.info'});
+      console.log(req.headers['x-forwarded-for'] || req.connection.remoteAddress);
+      const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
-    const cityRes = await client.city(clientIp);
+      const geoip2 = new WebServiceClient(process.env.GEOIP2_ACCOUNT_ID, process.env.GEOIP2_LICENSE_KEY, {
+        host: 'geolite.info',
+      });
 
-    const agent = useragent.parse(req.headers['user-agent']);
+      const cityRes = await geoip2.city(clientIp);
 
-    const newToken = new RefreshToken({
-      userId: user._id,
-      refreshToken: refreshToken,
-      agent: agent.toAgent(),
-      os: agent.os.toString(),
-      device: agent.device.toString(),
-      location: cityRes.city.names.en + ", " + cityRes.country.names.en,
-    });
+      const agent = useragent.parse(req.headers['user-agent']);
 
-    await newToken.save();
-    AuthenController.setCookie(res, refreshToken);
+      const newToken = new RefreshToken({
+        userId: user._id,
+        refreshToken: refreshToken,
+        agent: agent.toAgent(),
+        os: agent.os.toString(),
+        device: agent.device.toString(),
+        location: cityRes.city.names.en + ', ' + cityRes.country.names.en,
+      });
 
-    return accessToken;} catch(err) {console.log(err)}
+      await newToken.save();
+      AuthenController.setCookie(res, refreshToken);
+
+      return accessToken;
+    } catch (err) {
+      console.log(err);
+      return false;
+    }
   },
 
   loginLocal: async (req, res) => {
@@ -144,10 +151,15 @@ const AuthenController = {
       }
 
       const accessToken = await AuthenController.loginSuccess(req, res, userGoogle);
+      if (accessToken)
+        return res.status(200).json({
+          ...userGoogle._doc,
+          accessToken,
+        });
 
-      res.status(200).json({
-        ...userGoogle._doc,
-        accessToken,
+      res.status(500).json({
+        error: true,
+        mess: 'Login Failed',
       });
     } catch (err) {
       res.status(500).json(err.toString());
