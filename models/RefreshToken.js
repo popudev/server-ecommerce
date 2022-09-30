@@ -24,7 +24,10 @@ const refreshTokenSchema = new mongoose.Schema(
     },
     location: {
       type: String,
-    }
+    },
+    ip: {
+      type: String,
+    },
   },
   { timestamps: true },
 );

@@ -82,7 +82,6 @@ const AuthenController = {
       });
 
       const cityRes = await geoip2.city(clientIp);
-      console.log('cityRes: ', cityRes.subdivisions);
 
       const agent = useragent.parse(req.headers['user-agent']);
 
@@ -93,6 +92,7 @@ const AuthenController = {
         os: agent.os.toString(),
         device: agent.device.toString(),
         location: cityRes.city.names.en + ', ' + cityRes.country.names.en,
+        ip: clientIp,
       });
 
       await newToken.save();
@@ -120,10 +120,15 @@ const AuthenController = {
       if (match) {
         const accessToken = await AuthenController.loginSuccess(req, res, user);
         const { password, ...other } = user._doc;
+        if (accessToken)
+          return res.status(200).json({
+            accessToken,
+            ...other,
+          });
 
-        res.status(200).json({
-          accessToken,
-          ...other,
+        res.status(500).json({
+          error: true,
+          mess: 'Login Failed',
         });
       } else {
         res.status(404).json({
@@ -184,10 +189,14 @@ const AuthenController = {
       }
 
       const accessToken = await AuthenController.loginSuccess(req, res, userGithub);
-
-      res.status(200).json({
-        ...userGithub._doc,
-        accessToken,
+      if (accessToken)
+        return res.status(200).json({
+          ...userGithub._doc,
+          accessToken,
+        });
+      res.status(500).json({
+        error: true,
+        mess: 'Login Failed',
       });
     } catch (err) {
       res.status(500).json(err.toString());
@@ -211,10 +220,16 @@ const AuthenController = {
 
       const accessToken = await AuthenController.loginSuccess(req, res, userFacebook);
 
-      res.status(200).json({
-        ...userFacebook._doc,
-        accessToken,
+      if (accessToken)
+        return res.status(200).json({
+          ...userFacebook._doc,
+          accessToken,
+        });
+      res.status(500).json({
+        error: true,
+        mess: 'Login Failed',
       });
+      accessToken;
     } catch (err) {
       res.status(500).json(err.toString());
     }
