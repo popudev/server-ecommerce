@@ -82,6 +82,7 @@ const AuthenController = {
       });
 
       const cityRes = await geoip2.city(clientIp);
+      console.log('cityRes: ', cityRes);
 
       const agent = useragent.parse(req.headers['user-agent']);
 
