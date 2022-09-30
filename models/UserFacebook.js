@@ -20,6 +20,7 @@ const userFacebookSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
+      default: '',
     },
     admin: {
       type: Boolean,

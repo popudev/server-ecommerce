@@ -20,6 +20,7 @@ const userGithubSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
+      default: '',
     },
     admin: {
       type: Boolean,

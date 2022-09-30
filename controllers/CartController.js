@@ -7,7 +7,7 @@ const CartController = {
       const cart = await Cart.aggregate([
         {
           $match: {
-            userId: mongoose.Types.ObjectId(req.user.id),
+            userId: mongoose.Types.ObjectId(req.user._id),
           },
         },
         {
@@ -45,28 +45,26 @@ const CartController = {
 
   addProduct: async (req, res) => {
     try {
-      console.log(req.user.id);
-
       const product = {
         ...req.body,
         productId: mongoose.Types.ObjectId(req.body.productId),
       };
 
-      const cart = await Cart.find({ userId: req.user.id });
+      const cart = await Cart.find({ userId: req.user._id });
 
       const existsProduct = cart.filter((e) => e.productId.toString() === product.productId.toString());
 
       if (existsProduct.length) {
         const itemCart = existsProduct[0];
         await Cart.updateOne(
-          { _id: itemCart.id },
+          { _id: itemCart._id },
           {
             quantity: itemCart.quantity + product.quantity,
           },
         );
       } else {
         const newItemCart = new Cart({
-          userId: req.user.id,
+          userId: req.user._id,
           ...product,
         });
         await newItemCart.save();
@@ -80,7 +78,7 @@ const CartController = {
 
   deleteProduct: async (req, res) => {
     try {
-      await Cart.deleteOne({ _id: req.params.id, userId: req.user.id });
+      await Cart.deleteOne({ _id: req.params.id, userId: req.user._id });
       res.status(200).json('Delete to cart successfully');
     } catch (err) {
       res.status(500).json(err);

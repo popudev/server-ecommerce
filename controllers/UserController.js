@@ -10,16 +10,16 @@ const UserController = {
 
       switch (req.user.provider) {
         case 'github':
-          user = await UserGithub.findOne({ _id: req.user.id });
+          user = await UserGithub.findOne({ _id: req.user._id });
           break;
         case 'google':
-          user = await UserGoogle.findOne({ _id: req.user.id });
+          user = await UserGoogle.findOne({ _id: req.user._id });
           break;
         case 'facebook':
-          user = await UserFacebook.findOne({ _id: req.user.id });
+          user = await UserFacebook.findOne({ _id: req.user._id });
           break;
         default:
-          user = await User.findOne({ _id: req.user.id });
+          user = await User.findOne({ _id: req.user._id });
       }
 
       const { password, ...other } = user._doc;

@@ -12,7 +12,7 @@ const userGoogleSchema = new mongoose.Schema(
     },
     username: {
       type: String,
-      required: true,
+      default: '',
     },
     email: {
       type: String,
@@ -20,6 +20,7 @@ const userGoogleSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
+      default: '',
     },
     admin: {
       type: Boolean,
