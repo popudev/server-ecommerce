@@ -75,9 +75,7 @@ const AuthenController = {
 
     console.log(req.headers['x-forwarded-for'] || req.connection.remoteAddress);
     const clinetIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    const client = new WebServiceClient(process.env.GEOIP2_ACCOUNT_ID, process.env.GEOIP2_LICENSE_KEY, {
-      host: 'geolite.info',
-    });
+    const client = new WebServiceClient(process.env.GEOIP2_ACCOUNT_ID, process.env.GEOIP2_LICENSE_KEY);
 
     client.insights(clinetIp).then((response) => {
       console.log('response: ', response);
