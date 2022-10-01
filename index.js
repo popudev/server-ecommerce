@@ -15,16 +15,22 @@ mongoose
     autoIndex: true,
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    connectTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 5000,
   })
   .then(() => {
     console.log('Connected to mongoDB');
   })
   .catch((err) => {
-    console.log(err);
+    console.log('mongodb error connect: ', err);
   });
 
+mongoose.connection.on('disconnected', (err) => {
+  console.log('mongodb disconnected: ', err);
+});
+
 mongoose.connection.on('error', (err) => {
-  console.log(err);
+  console.log('mongodb error after connect: ', err);
 });
 
 app.use(express.json());
