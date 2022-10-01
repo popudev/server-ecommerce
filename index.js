@@ -18,7 +18,14 @@ mongoose
   })
   .then(() => {
     console.log('Connected to mongoDB');
+  })
+  .catch((err) => {
+    console.log(err);
   });
+
+mongoose.connection.on('error', (err) => {
+  console.log(err);
+});
 
 app.use(express.json());
 app.use(cors({ origin: true, credentials: true }));

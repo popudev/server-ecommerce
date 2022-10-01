@@ -75,8 +75,9 @@ const AuthenController = {
       const refreshToken = AuthenController.genarateRefreshToken(user);
 
       console.log(req.headers['x-forwarded-for'] || req.connection.remoteAddress);
-      const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+      let clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
+      if (clientIp === '::1') clientIp = '103.178.231.13';
       const geoip2 = new WebServiceClient(process.env.GEOIP2_ACCOUNT_ID, process.env.GEOIP2_LICENSE_KEY, {
         host: 'geolite.info',
       });
@@ -85,13 +86,16 @@ const AuthenController = {
 
       const agent = useragent.parse(req.headers['user-agent']);
 
+      const city = cityRes.city?.names?.en ? cityRes.city?.names?.en + ', ' : '';
+      const country = cityRes.country?.names?.en;
+
       const newToken = new RefreshToken({
         userId: user._id,
         refreshToken: refreshToken,
         agent: agent.toAgent(),
         os: agent.os.toString(),
         device: agent.device.toString(),
-        location: cityRes.city.names.en + ', ' + cityRes.country.names.en,
+        location: city + country,
         ip: clientIp,
       });
 
@@ -236,34 +240,38 @@ const AuthenController = {
   },
 
   requestRefreshToken: async (req, res) => {
-    const refreshTokenRequest = req.cookies.refreshToken;
+    try {
+      const refreshTokenRequest = req.cookies.refreshToken;
 
-    if (!refreshTokenRequest) return res.status(401).json("You're not authenticated");
+      if (!refreshTokenRequest) return res.status(401).json("You're not authenticated");
 
-    const match = await RefreshToken.findOne({ refreshToken: refreshTokenRequest });
+      const match = await RefreshToken.findOne({ refreshToken: refreshTokenRequest });
 
-    if (!match) return res.status(401).json("You're not authenticated");
+      if (!match) return res.status(401).json("You're not authenticated");
 
-    jwt.verify(refreshTokenRequest, process.env.JWT_ACCESS_KEY, async (err, user) => {
-      if (err) {
-        await RefreshToken.deleteOne({ refreshToken: refreshTokenRequest });
-        return res.status(403).json('Refresh token is not valid');
-      }
+      jwt.verify(refreshTokenRequest, process.env.JWT_ACCESS_KEY, async (err, user) => {
+        if (err) {
+          await RefreshToken.deleteOne({ refreshToken: refreshTokenRequest });
+          return res.status(403).json('Refresh token is not valid');
+        }
 
-      const newAccessToken = AuthenController.genarateAccessToken(user);
-      const newRefreshToken = AuthenController.genarateRefreshToken(user);
+        const newAccessToken = AuthenController.genarateAccessToken(user);
+        const newRefreshToken = AuthenController.genarateRefreshToken(user);
 
-      await RefreshToken.updateOne(
-        { refreshToken: refreshTokenRequest },
-        {
-          refreshToken: newRefreshToken,
-        },
-      );
+        await RefreshToken.updateOne(
+          { refreshToken: refreshTokenRequest },
+          {
+            refreshToken: newRefreshToken,
+          },
+        );
 
-      AuthenController.setCookie(res, newRefreshToken);
+        AuthenController.setCookie(res, newRefreshToken);
 
-      res.status(200).json({ accessToken: newAccessToken });
-    });
+        res.status(200).json({ accessToken: newAccessToken });
+      });
+    } catch (err) {
+      res.status(500).json(err.toString());
+    }
   },
 
   logout: async (req, res) => {
