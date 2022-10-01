@@ -40,8 +40,7 @@ app.use(cookieParser());
 
 app.use(
   timeout.handler({
-    timeout: 3000,
-
+    timeout: 5000,
     onTimeout: function (req, res) {
       res.status(503).send('Service unavailable. Please retry.');
     },
