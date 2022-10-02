@@ -40,7 +40,7 @@ app.use(
   timeout.handler({
     timeout: 10000,
     onTimeout: function (req, res) {
-      res.status(503).send('Service unavailable. Please retry.');
+      res.status(504).send('Service unavailable. Please retry.');
     },
   }),
 );

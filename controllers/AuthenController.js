@@ -57,6 +57,7 @@ const AuthenController = {
         fullname: req.body.fullname,
         email: req.body.email,
         username: req.body.username,
+        avatar: `https://api.multiavatar.com/${req.body.username}.svg?apikey=hQWHTvfLRKVqD0`,
         password: hashed,
       });
 
