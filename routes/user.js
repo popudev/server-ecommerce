@@ -9,5 +9,6 @@ const AuthenMiddleware = require('../middlewares/AuthenMiddleware');
 
 //Routes
 router.get('/', AuthenMiddleware.verifyToken, UserController.getUser);
+router.patch('/', AuthenMiddleware.verifyToken, UserController.updateUser);
 
 module.exports = router;

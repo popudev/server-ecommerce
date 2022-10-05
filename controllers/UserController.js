@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const UserFacebook = require('../models/UserFacebook');
 const UserGithub = require('../models/UserGithub');
@@ -37,6 +38,58 @@ const UserController = {
       res.status(200).json(users);
     } catch (err) {
       res.status(500).json(err);
+    }
+  },
+
+  updateUser: async (req, res) => {
+    try {
+      let userUpdated = null;
+
+      switch (req.user.provider) {
+        case 'github':
+          userUpdated = await UserGithub.findOneAndUpdate({ _id: req.user._id }, req.body);
+          break;
+
+        case 'google':
+          userUpdated = await UserGoogle.findOneAndUpdate({ _id: req.user._id }, req.body);
+          break;
+
+        case 'facebook':
+          userUpdated = await UserFacebook.findOneAndUpdate({ _id: req.user._id }, req.body);
+          break;
+
+        default:
+          const emailAccount = await User.findOne({
+            _id: { $ne: req.user._id },
+            email: req.body.email,
+          });
+          console.log('emailAccount: ', emailAccount);
+
+          if (emailAccount) {
+            res.status(500).json('Email is exists');
+            return;
+          }
+
+          const user = await User.findOne({ _id: req.user._id });
+
+          if (user.email === req.body.email) {
+            req.body.verify = false;
+          }
+
+          userUpdated = await User.findOneAndUpdate({ _id: req.user._id }, req.body);
+      }
+
+      const { password, ...other } = userUpdated._doc;
+
+      const userRes = {
+        ...other,
+        ...req.body,
+      };
+
+      if (userUpdated) res.status(200).json(userRes);
+      else res.status(404).json('Not found user');
+    } catch (err) {
+      res.status(500).json(err.toString());
     }
   },
 
