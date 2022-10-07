@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const UserFacebook = require('../models/UserFacebook');
 const UserGithub = require('../models/UserGithub');
@@ -25,6 +26,31 @@ const UserController = {
 
       const { password, ...other } = user._doc;
       res.status(200).json(other);
+    } catch (err) {
+      res.status(500).json(err);
+      console.log('err: ', err);
+    }
+  },
+
+  getUserByEmailOrPhone: async (req, res) => {
+    try {
+      let user = await User.findOne({
+        $or: [{ email: req.query.search }, { phone: req.query.search }],
+      });
+
+      if (!user)
+        return res.status(404).json({
+          error: true,
+          mess: 'Account not found',
+        });
+
+      const result = {
+        email: user.email,
+        avatar: user.avatar,
+        phone: user.phone,
+        username: user.username,
+      };
+      res.status(200).json(result);
     } catch (err) {
       res.status(500).json(err);
       console.log('err: ', err);
@@ -63,16 +89,17 @@ const UserController = {
             _id: { $ne: req.user._id },
             email: req.body.email,
           });
-          console.log('emailAccount: ', emailAccount);
 
-          if (emailAccount) {
-            res.status(500).json('Email is exists');
-            return;
-          }
+          if (emailAccount)
+            return res.status(500).json({
+              error: true,
+              key: 'email',
+              mess: 'Email is exist',
+            });
 
           const user = await User.findOne({ _id: req.user._id });
 
-          if (user.email === req.body.email) {
+          if (user.email !== req.body.email) {
             req.body.verify = false;
           }
 
@@ -106,6 +133,40 @@ const UserController = {
       }
     } catch (err) {
       res.status(500).json(err);
+    }
+  },
+
+  changePassword: async (req, res) => {
+    try {
+      const user = await User.findOne({ _id: req.user._id });
+
+      const match = await bcrypt.compare(req.body.currentPassword, user.password);
+
+      if (!match)
+        return res.status(404).json({
+          error: true,
+          key: 'currentPassword',
+          mess: 'Current Password Invalid',
+        });
+
+      const matchCurrentPassword = await bcrypt.compare(req.body.newPassword, user.password);
+
+      if (matchCurrentPassword)
+        return res.status(404).json({
+          error: true,
+          key: 'newPassword',
+          mess: 'New Password Match Current Password',
+        });
+
+      const salt = await bcrypt.genSalt(10);
+      const hashed = await bcrypt.hash(req.body.newPassword, salt);
+
+      await User.updateOne({ _id: req.user._id }, { password: hashed });
+
+      res.status(200).json('Update Password Successfully');
+    } catch (err) {
+      console.log('err: ', err);
+      res.status(500).json(err.toString());
     }
   },
 };

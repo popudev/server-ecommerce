@@ -4,7 +4,6 @@ const Address = require('../models/Address');
 const AddressController = {
   getAddress: async (req, res) => {
     try {
-      console.log(req.user._id);
       const addresses = await Address.aggregate([
         {
           $match: {
@@ -24,8 +23,20 @@ const AddressController = {
 
   addAddress: async (req, res) => {
     try {
-      if (req.body.defaultAddress) {
-        await Address.updateOne({ defaultAddress: true }, { defaultAddress: false });
+      if (!req.body.defaultAddress) {
+        const address = await Address.findOne({
+          userId: mongoose.Types.ObjectId(req.user._id),
+          defaultAddress: true,
+        });
+        if (!address) req.body.defaultAddress = true;
+      } else {
+        await Address.updataOne(
+          {
+            userId: mongoose.Types.ObjectId(req.user._id),
+            defaultAddress: true,
+          },
+          { defaultAddress: false },
+        );
       }
 
       const newAddress = new Address({

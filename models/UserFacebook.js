@@ -18,6 +18,10 @@ const userFacebookSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    phone: {
+      type: String,
+      default: '',
+    },
     avatar: {
       type: String,
       default: '',

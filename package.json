@@ -23,6 +23,7 @@
     "express-timeout-handler": "^2.2.2",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^6.4.4",
+    "nodemailer": "^6.8.0",
     "query-string": "^7.1.1",
     "useragent": "^2.3.0"
   },

@@ -12,6 +12,10 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    phone: {
+      type: String,
+      default: '',
+    },
     username: {
       type: String,
       required: true,
@@ -35,6 +39,9 @@ const userSchema = new mongoose.Schema(
     verify: {
       type: Boolean,
       default: false,
+    },
+    code: {
+      type: Number,
     },
     provider: {
       type: String,
