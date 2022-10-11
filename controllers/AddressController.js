@@ -30,7 +30,7 @@ const AddressController = {
         });
         if (!address) req.body.defaultAddress = true;
       } else {
-        await Address.updataOne(
+        await Address.updateOne(
           {
             userId: mongoose.Types.ObjectId(req.user._id),
             defaultAddress: true,

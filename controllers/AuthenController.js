@@ -32,6 +32,7 @@ const AuthenController = {
       {
         _id: user._id, // id is String
         admin: user.admin,
+        verify: user.verify,
         provider: user.provider,
       },
       process.env.JWT_ACCESS_KEY,
@@ -55,6 +56,7 @@ const AuthenController = {
       {
         _id: user._id,
         admin: user.admin,
+        verify: user.verify,
         provider: user.provider,
       },
       process.env.JWT_ACCESS_KEY,
