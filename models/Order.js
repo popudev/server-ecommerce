@@ -27,8 +27,11 @@ const orderSchema = new mongoose.Schema(
       type: Object,
     },
     status: {
-      type: Number,
-      default: 1,
+      type: Object,
+      default: {
+        code: 1,
+        title: 'Pending',
+      },
     },
   },
   { timestamps: true },

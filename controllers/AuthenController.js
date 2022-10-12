@@ -91,13 +91,16 @@ const AuthenController = {
       const accessToken = AuthenController.genarateAccessToken(user);
       const refreshToken = AuthenController.genarateRefreshToken(user);
 
-      console.log(req.headers['x-forwarded-for'] || req.connection.remoteAddress);
       let clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
       if (clientIp === '::1') clientIp = '103.178.231.13';
-      const geoip2 = new WebServiceClient(process.env.GEOIP2_ACCOUNT_ID, process.env.GEOIP2_LICENSE_KEY, {
-        host: 'geolite.info',
-      });
+      const geoip2 = new WebServiceClient(
+        process.env.GEOIP2_ACCOUNT_ID,
+        process.env.GEOIP2_LICENSE_KEY,
+        {
+          host: 'geolite.info',
+        },
+      );
 
       const cityRes = await geoip2.city(clientIp);
 
@@ -131,7 +134,8 @@ const AuthenController = {
       const user = await User.findOne({ username: req.body.username });
 
       if (!user)
-        return res.status(404).json({
+        return res.status(400).json({
+          error: true,
           key: 'username',
           mess: 'Username is not exist',
         });
@@ -147,12 +151,13 @@ const AuthenController = {
             ...other,
           });
 
-        res.status(500).json({
+        res.status(400).json({
           error: true,
           mess: 'Login Failed',
         });
       } else {
-        res.status(404).json({
+        res.status(400).json({
+          error: true,
           key: 'password',
           mess: 'Incorrect password',
         });
@@ -164,7 +169,9 @@ const AuthenController = {
 
   loginGoogle: async (req, res) => {
     try {
-      let userGoogle = await UserGoogle.findOne({ googleId: req.body.googleId });
+      let userGoogle = await UserGoogle.findOne({
+        googleId: req.body.googleId,
+      });
 
       if (!userGoogle) {
         const newUserGoogle = new UserGoogle({
@@ -184,7 +191,7 @@ const AuthenController = {
           accessToken,
         });
 
-      res.status(500).json({
+      res.status(400).json({
         error: true,
         mess: 'Login Failed',
       });
@@ -195,7 +202,9 @@ const AuthenController = {
 
   loginGithub: async (req, res) => {
     try {
-      let userGithub = await UserGithub.findOne({ githubId: req.body.githubId });
+      let userGithub = await UserGithub.findOne({
+        githubId: req.body.githubId,
+      });
 
       if (!userGithub) {
         const newUserGoogle = new UserGithub({
@@ -210,12 +219,14 @@ const AuthenController = {
       }
 
       const accessToken = await AuthenController.loginSuccess(req, res, userGithub);
+
       if (accessToken)
         return res.status(200).json({
           ...userGithub._doc,
           accessToken,
         });
-      res.status(500).json({
+
+      res.status(400).json({
         error: true,
         mess: 'Login Failed',
       });
@@ -226,7 +237,9 @@ const AuthenController = {
 
   loginFacebook: async (req, res) => {
     try {
-      let userFacebook = await UserFacebook.findOne({ facebookId: req.body.facebookId });
+      let userFacebook = await UserFacebook.findOne({
+        facebookId: req.body.facebookId,
+      });
 
       if (!userFacebook) {
         const newUserGoogle = new UserFacebook({
@@ -246,10 +259,12 @@ const AuthenController = {
           ...userFacebook._doc,
           accessToken,
         });
-      res.status(500).json({
+
+      res.status(400).json({
         error: true,
         mess: 'Login Failed',
       });
+
       accessToken;
     } catch (err) {
       res.status(500).json(err.toString());
@@ -260,16 +275,19 @@ const AuthenController = {
     try {
       const refreshTokenRequest = req.cookies.refreshToken;
 
-      if (!refreshTokenRequest) return res.status(401).json("You're not authenticated");
+      if (!refreshTokenRequest)
+        return res.status(401).json({ error: true, mess: "You're not authenticated" });
 
-      const match = await RefreshToken.findOne({ refreshToken: refreshTokenRequest });
+      const match = await RefreshToken.findOne({
+        refreshToken: refreshTokenRequest,
+      });
 
-      if (!match) return res.status(401).json("You're not authenticated");
+      if (!match) return res.status(401).json({ error: true, mess: "You're not authenticated" });
 
       jwt.verify(refreshTokenRequest, process.env.JWT_ACCESS_KEY, async (err, user) => {
         if (err) {
           await RefreshToken.deleteOne({ refreshToken: refreshTokenRequest });
-          return res.status(403).json('Refresh token is not valid');
+          return res.status(403).json({ error: true, mess: 'Refresh token is not valid' });
         }
 
         const newAccessToken = AuthenController.genarateAccessToken(user);
@@ -294,7 +312,9 @@ const AuthenController = {
   logout: async (req, res) => {
     try {
       const refreshTokenRequest = req.cookies.refreshToken;
-      if (!refreshTokenRequest) return res.status(401).json("You're not authenticated");
+      if (!refreshTokenRequest)
+        return res.status(401).json({ error: true, mess: 'Refresh token is not valid' });
+
       await RefreshToken.deleteOne({ refreshToken: refreshTokenRequest });
 
       AuthenController.setCookie(res, '');
@@ -302,7 +322,7 @@ const AuthenController = {
 
       res.status(200).json('Logout Successfully');
     } catch (err) {
-      res.status(500).json('Logout Failed');
+      res.status(400).json({ error: true, mess: 'Logout Failed' });
     }
   },
 
@@ -343,7 +363,11 @@ const AuthenController = {
       };
 
       res.redirect(
-        process.env.CLIENT_URL + '/load?avatar=' + userGithub.avatar_url + '&' + queryString.stringify(user),
+        process.env.CLIENT_URL +
+          '/load?avatar=' +
+          userGithub.avatar_url +
+          '&' +
+          queryString.stringify(user),
       );
     } catch (err) {
       console.log(err);
@@ -452,8 +476,11 @@ const AuthenController = {
   changePasswordWithCodeVia: async (req, res) => {
     try {
       const user = await User.findOne({ email: req.body.email });
-      if (!user) return res.status(404).json('Account not found');
-      if (user.code !== req.body.code) return res.status(403).json('Code is not valid');
+
+      if (!user) return res.status(400).json({ error: true, mess: 'Account not found' });
+
+      if (user.code !== req.body.code)
+        return res.status(400).json({ error: true, mess: 'Code is not valid' });
 
       const salt = await bcrypt.genSalt(10);
       const hashed = await bcrypt.hash(req.body.password, salt);

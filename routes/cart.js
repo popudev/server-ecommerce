@@ -6,10 +6,21 @@ const CartController = require('../controllers/CartController');
 
 //MiddleWare
 const AuthenMiddleware = require('../middlewares/AuthenMiddleware');
+const RateLimitMiddleware = require('../middlewares/RateLimitMiddleware');
 
 //Routes
 router.get('/', AuthenMiddleware.verifyToken, CartController.getCart);
-router.post('/', AuthenMiddleware.verifyToken, CartController.addProduct);
-router.delete('/product/:id', AuthenMiddleware.verifyToken, CartController.deleteProduct);
+router.post(
+  '/',
+  RateLimitMiddleware.apiLimiter,
+  AuthenMiddleware.verifyToken,
+  CartController.addProduct,
+);
+router.delete(
+  '/product/:id',
+  RateLimitMiddleware.apiLimiter,
+  AuthenMiddleware.verifyToken,
+  CartController.deleteProduct,
+);
 
 module.exports = router;

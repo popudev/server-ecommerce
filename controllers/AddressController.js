@@ -18,7 +18,9 @@ const AddressController = {
         },
       ]);
       res.status(200).json(addresses);
-    } catch (err) {}
+    } catch (err) {
+      res.status(500).json(err.toString());
+    }
   },
 
   addAddress: async (req, res) => {

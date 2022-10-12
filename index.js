@@ -5,6 +5,14 @@ const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const timeout = require('express-timeout-handler');
 const route = require('./routes');
+const rateLimit = require('express-rate-limit');
+
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 
 dotenv.config();
 
@@ -33,7 +41,13 @@ mongoose.connection.on('error', (err) => {
 });
 
 app.use(express.json());
-app.use(cors({ origin: true, credentials: true }));
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+    exposedHeaders: ['ratelimit-reset'],
+  }),
+);
 app.use(cookieParser());
 
 app.use(
@@ -49,7 +63,8 @@ app.get('/', (req, res) => {
   const code = req.query.code;
   res.send('HELLO: ' + code);
 });
-
+// Apply the rate limiting middleware to API calls only
+app.use(apiLimiter);
 route(app);
 
 app.listen(PORT, () => {

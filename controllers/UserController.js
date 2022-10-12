@@ -39,7 +39,7 @@ const UserController = {
       });
 
       if (!user)
-        return res.status(404).json({
+        return res.status(400).json({
           error: true,
           mess: 'Account not found',
         });
@@ -73,15 +73,24 @@ const UserController = {
 
       switch (req.user.provider) {
         case 'github':
-          userUpdated = await UserGithub.findOneAndUpdate({ _id: req.user._id }, req.body);
+          userUpdated = await UserGithub.findOneAndUpdate(
+            { _id: req.user._id },
+            req.body,
+          );
           break;
 
         case 'google':
-          userUpdated = await UserGoogle.findOneAndUpdate({ _id: req.user._id }, req.body);
+          userUpdated = await UserGoogle.findOneAndUpdate(
+            { _id: req.user._id },
+            req.body,
+          );
           break;
 
         case 'facebook':
-          userUpdated = await UserFacebook.findOneAndUpdate({ _id: req.user._id }, req.body);
+          userUpdated = await UserFacebook.findOneAndUpdate(
+            { _id: req.user._id },
+            req.body,
+          );
           break;
 
         default:
@@ -91,7 +100,7 @@ const UserController = {
           });
 
           if (emailAccount)
-            return res.status(500).json({
+            return res.status(400).json({
               error: true,
               key: 'email',
               mess: 'Email is exist',
@@ -103,7 +112,10 @@ const UserController = {
             req.body.verify = false;
           }
 
-          userUpdated = await User.findOneAndUpdate({ _id: req.user._id }, req.body);
+          userUpdated = await User.findOneAndUpdate(
+            { _id: req.user._id },
+            req.body,
+          );
       }
 
       const { password, ...other } = userUpdated._doc;
@@ -114,7 +126,7 @@ const UserController = {
       };
 
       if (userUpdated) res.status(200).json(userRes);
-      else res.status(404).json('Not found user');
+      else res.status(400).json({ error: true, mess: 'Not found user' });
     } catch (err) {
       res.status(500).json(err.toString());
     }
@@ -127,7 +139,8 @@ const UserController = {
       if (result) {
         res.status(200).json('Delete successfully');
       } else {
-        res.status(404).json({
+        res.status(400).json({
+          error: true,
           mess: 'Not Found User !!!',
         });
       }
@@ -140,19 +153,25 @@ const UserController = {
     try {
       const user = await User.findOne({ _id: req.user._id });
 
-      const match = await bcrypt.compare(req.body.currentPassword, user.password);
+      const match = await bcrypt.compare(
+        req.body.currentPassword,
+        user.password,
+      );
 
       if (!match)
-        return res.status(404).json({
+        return res.status(400).json({
           error: true,
           key: 'currentPassword',
           mess: 'Current Password Invalid',
         });
 
-      const matchCurrentPassword = await bcrypt.compare(req.body.newPassword, user.password);
+      const matchCurrentPassword = await bcrypt.compare(
+        req.body.newPassword,
+        user.password,
+      );
 
       if (matchCurrentPassword)
-        return res.status(404).json({
+        return res.status(400).json({
           error: true,
           key: 'newPassword',
           mess: 'New Password Match Current Password',

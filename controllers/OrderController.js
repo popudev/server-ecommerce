@@ -5,7 +5,11 @@ const Order = require('../models/Order');
 const OrderController = {
   addOrder: async (req, res) => {
     try {
-      if (!req.user.verify) return res.status(401).json('Account not verified');
+      if (!req.user.verify)
+        return res.status(401).json({
+          error: true,
+          mess: 'Account not verified',
+        });
 
       const newOrder = new Order({
         userId: req.user._id,
@@ -41,7 +45,7 @@ const OrderController = {
       let status = {};
       if (Number.parseInt(req.query.status) !== 0) {
         status = {
-          status: Number.parseInt(req.query.status),
+          'status.code': Number.parseInt(req.query.status),
         };
       }
 
@@ -94,9 +98,17 @@ const OrderController = {
 
   updateOrderStatus: async (req, res) => {
     try {
-      if (req.body.status !== 3 && !req.user.admin) return res.status(401).json();
+      if (req.body.status !== 3 && !req.user.admin)
+        return res.status(401).json({ error: true, mess: "You're not authenticated" });
 
-      await Order.updateOne({ _id: req.body.id }, { status: req.body.status });
+      const orderStatus = ['', 'Pending', 'Completed', 'Canceled'];
+
+      const status = {
+        code: req.body.status,
+        title: orderStatus[req.body.status],
+      };
+
+      await Order.updateOne({ _id: req.body.id }, { status: status });
 
       res.status(200).json('Updated Succesfully');
     } catch (err) {
