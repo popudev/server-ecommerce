@@ -4,6 +4,7 @@ const Order = require('../models/Order');
 
 const OrderController = {
   addOrder: async (req, res) => {
+    console.log('req: ', req.user);
     try {
       if (!req.user.verify)
         return res.status(401).json({

@@ -16,6 +16,12 @@ router.post(
   AuthenMiddleware.verifyToken,
   CartController.addProduct,
 );
+router.patch(
+  '/',
+  RateLimitMiddleware.apiLimiter,
+  AuthenMiddleware.verifyToken,
+  CartController.updateQuantityProduct,
+);
 router.delete(
   '/product/:id',
   RateLimitMiddleware.apiLimiter,

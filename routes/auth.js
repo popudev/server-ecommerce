@@ -17,18 +17,17 @@ router.post('/login/facebook', AuthenController.loginFacebook);
 router.get('/refreshToken', AuthenController.requestRefreshToken);
 router.get('/logout', AuthenController.logout);
 router.get('/github/callback', AuthenController.githubCallback);
-router.post(
-  '/code/email',
-  RateLimitMiddleware.sendCodeViaEmail,
-  AuthenController.sendCodeViaEmail,
-);
-router.post('/verify/code', AuthenController.verifyCodeViaEmail);
+
+router.post('/send/code', RateLimitMiddleware.sendCodeViaEmail, AuthenController.sendCodeViaEmail);
+router.post('/confirmation/code', AuthenController.confirmCodeViaEmail);
+
 router.post('/recover/password', AuthenController.changePasswordWithCodeVia);
+
 router.get(
-  '/verify/email',
+  '/send/emailVerify',
   AuthenMiddleware.verifyToken,
-  AuthenController.verifyEmail,
+  AuthenController.sendVerificationEmail,
 );
-router.get('/confirmation/:tokenEmail', AuthenController.confirmation);
+router.get('/confirmation/emailVerify/:tokenEmail', AuthenController.confirmVerificationEmail);
 
 module.exports = router;

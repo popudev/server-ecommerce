@@ -44,7 +44,8 @@ const AuthenController = {
     return jwt.sign(
       {
         _id: user._id,
-        email: user.email, // id is String
+        email: user.email,
+        provider: user.provider, // id is String
       },
       process.env.JWT_EMAIL_KEY,
       { expiresIn: '1d' },
@@ -284,11 +285,29 @@ const AuthenController = {
 
       if (!match) return res.status(401).json({ error: true, mess: "You're not authenticated" });
 
-      jwt.verify(refreshTokenRequest, process.env.JWT_ACCESS_KEY, async (err, user) => {
+      jwt.verify(refreshTokenRequest, process.env.JWT_ACCESS_KEY, async (err, userToken) => {
         if (err) {
           await RefreshToken.deleteOne({ refreshToken: refreshTokenRequest });
           return res.status(403).json({ error: true, mess: 'Refresh token is not valid' });
         }
+
+        let user = null;
+
+        switch (userToken.provider) {
+          case 'github':
+            user = await UserGithub.findOne({ _id: userToken._id });
+            break;
+          case 'google':
+            user = await UserGoogle.findOne({ _id: userToken._id });
+            break;
+          case 'facebook':
+            user = await UserFacebook.findOne({ _id: userToken._id });
+            break;
+          default:
+            user = await User.findOne({ _id: userToken._id });
+        }
+
+        if (!user) return res.status(401).json({ error: true, mess: "You're not authenticated" });
 
         const newAccessToken = AuthenController.genarateAccessToken(user);
         const newRefreshToken = AuthenController.genarateRefreshToken(user);
@@ -375,9 +394,24 @@ const AuthenController = {
     }
   },
 
-  verifyEmail: async (req, res) => {
+  sendVerificationEmail: async (req, res) => {
+    // console.log('req: ', req.user);
     try {
-      const user = await User.findOne({ _id: req.user._id });
+      let user = {};
+
+      switch (req.user.provider) {
+        case 'github':
+          user = await UserGithub.findOne({ _id: req.user._id });
+          break;
+        case 'google':
+          user = await UserGoogle.findOne({ _id: req.user._id });
+          break;
+        case 'facebook':
+          user = await UserFacebook.findOne({ _id: req.user._id });
+          break;
+        default:
+          user = await User.findOne({ _id: req.user._id });
+      }
 
       let transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -395,15 +429,16 @@ const AuthenController = {
         to: user.email, // list of receivers
         subject: 'Verification Email Address', // Subject line
         text: '', // plain text body
-        html: emailHTML(process.env.SERVER_URL + '/auth/confirmation/' + tokenEmail), // html body
+        html: emailHTML(process.env.SERVER_URL + '/auth/confirmation/emailVerify/' + tokenEmail), // html body
       });
       res.status(200).json('Send verification email successfully');
     } catch (err) {
       res.status(500).json(err.toString());
+      console.log('err: ', err);
     }
   },
 
-  confirmation: async (req, res) => {
+  confirmVerificationEmail: async (req, res) => {
     try {
       const tokenEmail = req.params.tokenEmail;
 
@@ -418,9 +453,21 @@ const AuthenController = {
         userCurrent = user;
       });
 
-      await User.updateOne({ _id: userCurrent._id }, { verify: true });
+      switch (userCurrent.provider) {
+        case 'github':
+          await UserGithub.updateOne({ _id: userCurrent._id }, { verify: true });
+          break;
+        case 'google':
+          await UserGoogle.updateOne({ _id: userCurrent._id }, { verify: true });
+          break;
+        case 'facebook':
+          await UserFacebook.updateOne({ _id: userCurrent._id }, { verify: true });
+          break;
+        default:
+          await User.updateOne({ _id: userCurrent._id }, { verify: true });
+      }
 
-      res.redirect(process.env.CLIENT_URL + '/profile');
+      res.redirect(process.env.CLIENT_URL + '/profile/account');
     } catch (err) {
       res.status(500).send(err.toString());
     }
@@ -457,7 +504,7 @@ const AuthenController = {
     }
   },
 
-  verifyCodeViaEmail: async (req, res) => {
+  confirmCodeViaEmail: async (req, res) => {
     try {
       const email = req.body.email;
       const code = req.body.code;

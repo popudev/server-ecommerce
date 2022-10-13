@@ -52,7 +52,9 @@ const CartController = {
 
       const cart = await Cart.find({ userId: req.user._id });
 
-      const existsProduct = cart.filter((e) => e.productId.toString() === product.productId.toString());
+      const existsProduct = cart.filter(
+        (e) => e.productId.toString() === product.productId.toString(),
+      );
 
       if (existsProduct.length) {
         const itemCart = existsProduct[0];
@@ -73,6 +75,17 @@ const CartController = {
       res.status(200).json('Add to cart successfully');
     } catch (err) {
       res.status(500).json(err);
+    }
+  },
+
+  updateQuantityProduct: async (req, res) => {
+    try {
+      const quantity = req.body.quantity;
+      const productId = req.body.productId;
+      await Cart.updateOne({ userId: req.user._id, productId: productId }, { quantity: quantity });
+      res.status(200).json('Updated Quantity Successfully');
+    } catch (err) {
+      res.status(500).json(err.toString());
     }
   },
 
