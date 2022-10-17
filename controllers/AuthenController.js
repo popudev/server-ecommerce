@@ -476,7 +476,7 @@ const AuthenController = {
   sendCodeViaEmail: async (req, res) => {
     try {
       const email = req.body.email;
-      console.log('email: ', email);
+
       let transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -512,7 +512,8 @@ const AuthenController = {
       const user = await User.findOne({ email: email });
       if (!user) return res.status(404).json('Account not found');
 
-      if (user.code !== code) return res.status(403).json('Code is not valid');
+      if (user.code !== code)
+        return res.status(400).json({ error: true, mess: 'Code is not valid' });
 
       res.status(200).json('Successfully verify code');
     } catch (err) {
@@ -531,7 +532,15 @@ const AuthenController = {
 
       const salt = await bcrypt.genSalt(10);
       const hashed = await bcrypt.hash(req.body.password, salt);
-      await User.updateOne({ email: req.body.email }, { password: hashed });
+      await User.updateOne(
+        {
+          email: req.body.email,
+        },
+        {
+          password: hashed,
+          $unset: { code: true },
+        },
+      );
 
       res.status(200).json('Successfully change new password');
     } catch (err) {
