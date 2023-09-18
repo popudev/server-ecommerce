@@ -8,9 +8,11 @@ npm install
 
 1. Tạo file .env lấy mẫu từ .env.example
 2. Điền giá trị cho các biến
-  
+
 ```env
 MONGODB_URL= đường dẫn để kết nối database mongo
+
+PORT= port server
 SERVER_URL= đường dẫn của server
 CLIENT_URL= đường dẫn của client
 
@@ -33,6 +35,7 @@ JWT_EMAIL_KEY=
 ```
 
 # Khởi chạy dự án
+
 ```sh
 npm start
 ```
