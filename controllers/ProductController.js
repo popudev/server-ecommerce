@@ -54,7 +54,7 @@ const ProductController = {
       const match = {
         title: {
           $regex: req.query.title || '',
-          $options: 'gi',
+          $options: 'i',
         },
       };
 
