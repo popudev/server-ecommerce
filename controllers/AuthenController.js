@@ -91,36 +91,50 @@ const AuthenController = {
     try {
       const accessToken = AuthenController.genarateAccessToken(user);
       const refreshToken = AuthenController.genarateRefreshToken(user);
-
       let clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
-      if (clientIp === '::1') clientIp = '103.178.231.13';
-      const geoip2 = new WebServiceClient(
-        process.env.GEOIP2_ACCOUNT_ID,
-        process.env.GEOIP2_LICENSE_KEY,
-        {
-          host: 'geolite.info',
-        },
-      );
+      if (process.env.GEOIP2_ACCOUNT_ID && process.env.GEOIP2_LICENSE_KEY) {
+        if (clientIp === '::1') clientIp = '103.178.231.13';
+        const geoip2 = new WebServiceClient(
+          process.env.GEOIP2_ACCOUNT_ID,
+          process.env.GEOIP2_LICENSE_KEY,
+          {
+            host: 'geolite.info',
+          },
+        );
 
-      const cityRes = await geoip2.city(clientIp);
+        const cityRes = await geoip2.city(clientIp);
 
-      const agent = useragent.parse(req.headers['user-agent']);
+        const agent = useragent.parse(req.headers['user-agent']);
 
-      const city = cityRes.city?.names?.en ? cityRes.city?.names?.en + ', ' : '';
-      const country = cityRes.country?.names?.en;
+        const city = cityRes.city?.names?.en ? cityRes.city?.names?.en + ', ' : '';
+        const country = cityRes.country?.names?.en;
+
+        const newToken = new RefreshToken({
+          userId: user._id,
+          refreshToken: refreshToken,
+          agent: agent.toAgent(),
+          os: agent.os.toString(),
+          device: agent.device.toString(),
+          location: city + country,
+          ip: clientIp,
+        });
+
+        await newToken.save();
+      }
 
       const newToken = new RefreshToken({
         userId: user._id,
         refreshToken: refreshToken,
-        agent: agent.toAgent(),
-        os: agent.os.toString(),
-        device: agent.device.toString(),
-        location: city + country,
+        agent: 'unknow',
+        os: 'unknow',
+        device: 'unknow',
+        location: 'unknow',
         ip: clientIp,
       });
 
       await newToken.save();
+
       AuthenController.setCookie(res, refreshToken);
 
       return accessToken;
